@@ -80,12 +80,53 @@ WSGI_APPLICATION = 'meiduo_mall.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/1.11/ref/settings/#databases
 
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+#     }
+# }
+
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-    }
+        'ENGINE': 'django.db.backends.mysql',
+        'HOST': '127.0.0.1',  # 数据库主机
+        'PORT': 3306,  # 数据库端口
+        'USER': 'meiduo',  # 数据库用户名
+        'PASSWORD': 'meiduo',  # 数据库用户密码
+        'NAME': 'meiduo_mall'  # 数据库名字
+    },
 }
+
+# redis
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": "redis://127.0.0.1:6379/0",
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        }
+    },
+    "session": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": "redis://127.0.0.1:6379/1",
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        }
+    },
+    # redis缓存验证码的链接配置
+    "verify_codes": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": "redis://127.0.0.1:6379/2",
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        }
+    },
+}
+
+SESSION_ENGINE = "django.contrib.sessions.backends.cache"
+SESSION_CACHE_ALIAS = "session"
+
 
 
 # Password validation
@@ -125,3 +166,62 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/1.11/howto/static-files/
 
 STATIC_URL = '/static/'
+
+#日志
+LOGGING = {
+    'version': 1,
+    #设置是否要禁用其他的日志功能，False表示不禁用
+    'disable_existing_loggers': False,
+    #输出日志格式
+    'formatters': {
+        #详细
+        'verbose': {
+            'format': '%(levelname)s %(asctime)s %(module)s %(lineno)d %(message)s'
+        },
+        # 简单
+        'simple': {
+            'format': '%(levelname)s %(module)s %(lineno)d %(message)s'
+        },
+    },
+    # 过滤器，过滤掉一些不必要的操作
+    'filters': {
+        'require_debug_true': {
+            '()': 'django.utils.log.RequireDebugTrue',
+        },
+    },
+    # 日志处理方式
+    'handlers': {
+        # 把日志显示到终端
+        'console': {
+            'level': 'DEBUG',
+            'filters': ['require_debug_true'],
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple'
+        },
+        # 把日志记录到文件
+        'file': {
+            'level': 'INFO',
+            'class': 'logging.handlers.RotatingFileHandler',
+            # 日志文件的位置
+            'filename': os.path.join(os.path.dirname(BASE_DIR), "logs/meiduo.log"),
+            'maxBytes': 300 * 1024 * 1024,
+            'backupCount': 10,
+            'formatter': 'verbose'
+        },
+    },
+    # 日志器，在程序中记录日志时的操作对象的配置信息
+    'loggers': {
+        'django': { # 定义了一个名为django的日志器
+            'handlers': ['console', 'file'],
+            # 设置是否运行日志向上一级的日志功能传递
+            'propagate': True,
+        },
+    }
+}
+REST_FRAMEWORK = {
+    # 异常处理 修改restframework框架中的异常处理机制
+    'EXCEPTION_HANDLER': 'meiduo_mall.utils.exceptions.exception_handler',
+}
+#设置django中使用的用户认证模型
+# 而且，这里的配置，必须在项目第一次进行数据迁移之前进行声明
+# AUTH_USER_MODEL='users.User'
