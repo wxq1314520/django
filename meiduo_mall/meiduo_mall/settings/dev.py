@@ -43,7 +43,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     # 注册users模块
-    'meiduo_mall.apps.users.apps.UsersConfig'
+    'users.apps.UsersConfig',
+    'rest_framework'
 ]
 
 MIDDLEWARE = [
@@ -224,4 +225,5 @@ REST_FRAMEWORK = {
 }
 #设置django中使用的用户认证模型
 # 而且，这里的配置，必须在项目第一次进行数据迁移之前进行声明
-# AUTH_USER_MODEL='users.User'
+AUTH_USER_MODEL='users.User' #这里官方要求，必须只有一个《子应用目录，模型雷鸣
+
