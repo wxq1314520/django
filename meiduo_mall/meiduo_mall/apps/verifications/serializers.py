@@ -44,6 +44,6 @@ class ImageCodeCheckSerializer(serializers.Serializer):
         send_flag=redis_conn.get('send_flag_%s'% mobile)
         #如果redis中有这个数据则标识60s发送过短信
         if send_flag:
-            raise serializers.ValidationError("请求国语频繁")
+            raise serializers.ValidationError("请求过于频繁")
 
         return attrs

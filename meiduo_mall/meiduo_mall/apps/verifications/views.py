@@ -1,20 +1,18 @@
 import random
-
-from django.http import HttpResponse
 from django.shortcuts import render
-from rest_framework import status
+from rest_framework.views import APIView
+from django_redis import get_redis_connection
+from django.http.response import HttpResponse
 from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
-
-from . import serializers
-# Create your views here.
-from rest_framework.views import APIView
-#导入验证码
-from django_redis import get_redis_connection
+from rest_framework import status
+import random
 
 from . import constants
 from meiduo_mall.libs.captcha.captcha import captcha
+from . import serializers
 from meiduo_mall.libs.yuntongxun.sms import CCP
+
 
 class ImageCodeView(APIView):
     """验证码试图类"""
@@ -34,7 +32,7 @@ class ImageCodeView(APIView):
 
 class SMSCodeView(GenericAPIView):
     #给当前视图指定序列化器
-    serializer_calss=serializers.ImageCodeCheckSerializer
+    serializer_class=serializers.ImageCodeCheckSerializer
 
     """短信验证码视图类"""
     def get(self,request,mobile):
@@ -50,18 +48,20 @@ class SMSCodeView(GenericAPIView):
 
         redis_conn=get_redis_connection("verify_codes")
         # 2.2 把验证码保存到redis
-        pl=redis_conn.pipline() #获取redis管道对象，redis能使用的操作，管道对象也可以使用
+        pl=redis_conn.pipeline() #获取redis管道对象，redis能使用的操作，管道对象也可以使用
         pl.multi() #有利于提高效率
         # setex("变量名","有效期【秒】"，“值”)
         pl.setex("sms_%s"% mobile,constants.SMS_CODE_REDIS_EXPIRES,sms_code)
         # redis 中维护一个send_flag_<mobile>,60
-        pl.setex("send_flag_%s" %mobile,constants.SEND_SMS_CODE_INTERVAL,1)
+        pl.setex("send_flag_%s" % mobile,constants.SEND_SMS_CODE_INTERVAL,1)
         pl.execute() #吧上面所以的redis操作一起执行
         # 5.发送短信
-        time=str(constants.SMS_CODE_REDIS_EXPIRES)
-        ccp=CCP()
-        ccp.send_template_sms(mobile,[sms_code,time],1)
+        ccp = CCP()
+        time=str(constants.SMS_CODE_REDIS_EXPIRES/60)
+
+        ccp.send_template_sms(mobile,[sms_code,time],constants.SMS_TEMP_ID)
 
 
 
-        return Response({'message':'0k'},status=status.HTTP_200_OK)
+        return Response({"message":"0k"},status.HTTP_200_OK)
+
