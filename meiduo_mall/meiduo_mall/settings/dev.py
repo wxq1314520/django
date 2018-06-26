@@ -10,7 +10,7 @@ https://docs.djangoproject.com/en/1.11/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/1.11/ref/settings/
 """
-
+import datetime
 import os
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
@@ -45,7 +45,9 @@ INSTALLED_APPS = [
     # 注册users模块
     'users.apps.UsersConfig',
     'rest_framework',
-    'corsheaders'
+    'corsheaders',
+    # 注册oauth模块
+    'oauth.apps.OauthConfig'
 ]
 
 MIDDLEWARE = [
@@ -230,8 +232,23 @@ LOGGING = {
 REST_FRAMEWORK = {
     # 异常处理 修改restframework框架中的异常处理机制
     'EXCEPTION_HANDLER': 'meiduo_mall.utils.exceptions.exception_handler',
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_jwt.authentication.JSONWebTokenAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.BasicAuthentication',
+    ),
+}
+JWT_AUTH={
+    'JWT_EXPIRATION_DELTA': datetime.timedelta(days=1),
+    'JWT_RESPONSE_PAYLOAD_HANDLER': 'users.utils.jwt_response_payload_handler',
 }
 #设置django中使用的用户认证模型
 # 而且，这里的配置，必须在项目第一次进行数据迁移之前进行声明
 AUTH_USER_MODEL='users.User' #这里官方要求，必须只有一个《子应用目录，模型雷鸣
 
+AUTHENTICATION_BACKENDS = [
+    'users.utils.UsernameMobileAuthBackend',
+]
+QQ_APP_ID='101474184'
+QQ_APP_KEY = 'c6ce949e04e12ecc909ae6a8b09b637c'
+QQ_REDIRECT_URL = 'http://www.meiduo.site:8080/oauth_callback.html'

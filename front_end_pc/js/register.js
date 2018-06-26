@@ -141,6 +141,7 @@ var vm = new Vue({
 				this.error_check_password = false;
 			}		
 		},
+        //校验手机号码
 		check_phone: function (){
 			var re = /^1[345789]\d{9}$/;
 			if(re.test(this.mobile)) {
@@ -148,6 +149,23 @@ var vm = new Vue({
 			} else {
 				this.error_phone = true;
 			}
+			// 发送请求到后台校验手机
+            if(this.error_phone==false){
+			    axios.get('http://127.0.0.1:8000/mobile/'+this.mobile+'/count/',{
+			        responseType:'json'
+                    })
+                    .then(response=>{
+                        if(response.data.count>0){
+                            this.error_phone_message='手机号以存在'
+                            this.error_phone=true;
+                        }else{
+                            this.error_phone=false;
+                        }
+                    })
+                    .catch(error=>{
+                        console.log(error.response.data);
+                    })
+            }
 		},
 		check_image_code: function (){
 			if(!this.image_code) {
@@ -171,13 +189,72 @@ var vm = new Vue({
 			}
 		},
 		// 注册
-		on_submit: function(){
-			this.check_username();
-			this.check_pwd();
-			this.check_cpwd();
-			this.check_phone();
-			this.check_sms_code();
-			this.check_allow();
-		}
+		on_submit: function() {
+            this.check_username();
+            this.check_pwd();
+            this.check_cpwd();
+            this.check_phone();
+            this.check_sms_code();
+            this.check_allow();
+
+            //提交注册信息
+            // if (this.error_name == false && this.error_password == false
+            //     && this.error_check_password == false && this.error_phone == false && this.error_sms_code == false && this.error_allow == false) {
+            //     axios.post("http://127.0.0.1:8000/users/", {
+            //         username: this.username,
+            //         password2:this.password2,
+            //         mobile:this.mobile,
+            //         sms_code:this.sms_code,
+            //         allow:this.allow
+            //     },{
+            //         responseType:'json'
+            //     }).then(response => {
+            //         //提交成功
+            //         location.href='/index.html'
+            //     }).catch(error => {
+            //
+            //         //注册失败
+            //         if (error.response.status=400){
+            //             this.error_sms_code_message='短信验证码错误';
+            //             this.error_sms_code=true;
+            //         }else{
+            //             console.log(error.response.data);
+            //         }
+            //     })
+            // }
+            if(this.error_name == false && this.error_password == false && this.error_check_password == false
+				&& this.error_phone == false && this.error_sms_code == false && this.error_allow == false) {
+				axios.post('http://127.0.0.1:8000/users/', {
+						username: this.username,
+						password: this.password,
+						password2: this.password2,
+						mobile: this.mobile,
+						sms_code: this.sms_code,
+						allow: this.allow.toString()
+					}, {
+						responseType: 'json'
+					})
+					.then(response => {
+                        // 注册成功了，保存登陆状态，并跳转到首页/用户中心
+                        // 保存状态功能，下节课在做。
+
+                        // 跳转到首页
+						sessionStorage.clear();
+						localStorage.clear();
+						localStorage.token=response.data.token;
+						localStorage.username=response.data.username;
+						localStorage.user_id=response.data.user_id;
+                        //location.href = '/index.html'; // 也可以使用 location.assign("/index.html");
+					})
+					.catch(error=> {
+						if (error.response.status == 400) {
+							this.error_sms_code_message = '短信验证码错误';
+							this.error_sms_code = true;
+						} else {
+							console.log(error.response.data);
+						}
+					})
+			}
+        }
 	}
 });

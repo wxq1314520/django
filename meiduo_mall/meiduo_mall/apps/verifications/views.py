@@ -8,10 +8,13 @@ from rest_framework.response import Response
 from rest_framework import status
 import random
 
+from users.models import User
 from . import constants
 from meiduo_mall.libs.captcha.captcha import captcha
 from . import serializers
 from meiduo_mall.libs.yuntongxun.sms import CCP
+
+from celery_tasks.sms.tasks import send_sms_code
 
 
 class ImageCodeView(APIView):
@@ -56,12 +59,56 @@ class SMSCodeView(GenericAPIView):
         pl.setex("send_flag_%s" % mobile,constants.SEND_SMS_CODE_INTERVAL,1)
         pl.execute() #吧上面所以的redis操作一起执行
         # 5.发送短信
-        ccp = CCP()
-        time=str(constants.SMS_CODE_REDIS_EXPIRES/60)
+        # ccp = CCP()
+        # time=str(constants.SMS_CODE_REDIS_EXPIRES/60)
+        #
+        # ccp.send_template_sms(mobile,[sms_code,time],constants.SMS_TEMP_ID)
+        # 调用
 
-        ccp.send_template_sms(mobile,[sms_code,time],constants.SMS_TEMP_ID)
-
+        send_sms_code.delay(mobile,sms_code)
 
 
         return Response({"message":"0k"},status.HTTP_200_OK)
+
+class SMSCodeByTokenView(APIView):
+    """
+    短信验证码
+    """
+    def get(self,request):
+        """
+        凭借token发送短信验证码
+        :param request:
+        :return:
+        """
+        # 验证access_token
+        access_token=request.query_params.get('access_token')
+        if not access_token:
+            return Response({'message':'缺少access token'},status=status.HTTP_400_BAD_REQUEST)
+        mobile=User.check_send_sms_code_token(access_token)
+        if not mobile:
+            return Response({'message':'access_token'},status=status.HTTP_400_BAD_REQUEST)
+
+        # 判断是否在60s内
+        redis_conn=get_redis_connection('verify_codes')
+        send_flag=redis_conn.get("send_flag_%s" % mobile)
+        if send_flag:
+            return Response({"message":"请求次数过于频繁"},status=status.HTTP_429_TOO_MANY_REQUESTS)
+
+        # 生成短信验证码
+        sms_code="%06d"% random.randint(0,999999)
+
+        # 保存短信验证码与发送记录
+        p1=redis_conn.pipeline()
+        p1.setex("sms_%s"% mobile,constants.SMS_CODE_REDIS_EXPIRES,sms_code)
+        p1.setex("send_flag_%s" % mobile,constants.SEND_SMS_CODE_INTERVAL,1)
+        p1.execute()
+
+        # 发送短信验证码
+        send_sms_code.delay(mobile,sms_code)
+
+        return Response({"message":"ok"},status.HTTP_200_OK)
+
+
+
+
 
