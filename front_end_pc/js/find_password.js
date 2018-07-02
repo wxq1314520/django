@@ -227,7 +227,7 @@
 var vm = new Vue({
     el: '#app',
     data: {
-        host:'http://127.0.0.1:8000',
+        host,
 
         image_code_id: '',
         image_code_url: '',

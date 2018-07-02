@@ -12,7 +12,7 @@ app = Celery('meiduo')
 app.config_from_object('celery_tasks.config')
 
 # 自动注册celery任务
-app.autodiscover_tasks(['celery_tasks.sms'])
+app.autodiscover_tasks(['celery_tasks.sms','celery_tasks.email'])
 
 
 # 最终在终端里面运行celery

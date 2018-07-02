@@ -1,6 +1,7 @@
 var vm = new Vue({
     el: '#app',
     data: {
+        host,
         error_username: false,
         error_pwd: false,
         error_pwd_message: '请填写密码',
@@ -40,7 +41,7 @@ var vm = new Vue({
             this.check_pwd();
 
             if (this.error_username == false && this.error_pwd == false) {
-                axios.post('http://127.0.0.1:8000/authorizations/', {
+                axios.post(this.host+'/authorizations/', {
                         username: this.username,
                         password: this.password
                     }, {
@@ -74,6 +75,18 @@ var vm = new Vue({
                         this.error_pwd = true;
                     })
             }
+        },
+        qq_login: function(){
+            var state = this.get_query_string('next') || '/';
+            axios.get(this.host + '/oauth/qq/authorization/?state=' + state, {
+                    responseType: 'json'
+                })
+                .then(response => {
+                    location.href = response.data.auth_url;
+                })
+                .catch(error => {
+                    console.log(error.response.data);
+                })
         },
     }
 });

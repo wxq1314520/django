@@ -30,7 +30,12 @@ SECRET_KEY = '&=+9u7!v&dl6c&6@!@a#2v2^t_!0m%qogr#jj^b^-6ilxeek)#'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    "127.0.0.1",
+    "www.meiduo.com",
+    "api.meiduo.com",
+]
+
 
 
 # Application definition
@@ -42,12 +47,14 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'rest_framework',
     # 注册users模块
     'users.apps.UsersConfig',
-    'rest_framework',
+    'oauth.apps.OauthConfig',
+    'area.apps.AreaConfig',
     'corsheaders',
     # 注册oauth模块
-    'oauth.apps.OauthConfig'
+
 ]
 
 MIDDLEWARE = [
@@ -62,8 +69,9 @@ MIDDLEWARE = [
 ]
 
 CORS_ORIGIN_WHITELIST=(
-    '127.0.0.1:8080',
-    'localhost:8080',
+    "www.meiduo.com:8080",
+    "api.meiduo.com:8000",
+
 )
 CORS_ALLOW_CREDENTIALS=True
 
@@ -249,6 +257,28 @@ AUTH_USER_MODEL='users.User' #这里官方要求，必须只有一个《子应�
 AUTHENTICATION_BACKENDS = [
     'users.utils.UsernameMobileAuthBackend',
 ]
-QQ_APP_ID='101474184'
-QQ_APP_KEY = 'c6ce949e04e12ecc909ae6a8b09b637c'
-QQ_REDIRECT_URL = 'http://www.meiduo.site:8080/oauth_callback.html'
+# QQ第三方登陆设置信息
+QQ_APP_ID='101480417'
+QQ_APP_KEY = '325a06cd42b16e0576f16d8b9d8aeeaa'
+QQ_REDIRECT_URI = 'http://www.meiduo.com:8080/oauth_callback.html'
+
+# 163的邮箱配置信息
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.163.com'
+EMAIL_PORT = 25
+#发件人的邮箱账号
+EMAIL_HOST_USER = 'wxq362425@163.com'
+#在邮箱中设置的客户端授权密码
+EMAIL_HOST_PASSWORD = 'wxq123'
+# 收件人看到的发件人
+EMAIL_FROM = 'python10期美多商城<wxq362425@163.com>'
+
+
+
+# DRF扩展配置缓存
+REST_FRAMEWORK_EXTENSIONS = {
+    # 缓存时间[秒]
+    'DEFAULT_CACHE_RESPONSE_TIMEOUT': 60 * 60 * 24,
+    # 缓存存储[选择对应的缓存配置]
+    'DEFAULT_USE_CACHE': 'default',
+}

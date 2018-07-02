@@ -1,12 +1,16 @@
 import re
 
 from django_redis import get_redis_connection
+from django.conf import settings
 from rest_framework import serializers
 from rest_framework_jwt.settings import api_settings
 
 from users.utils import get_user_by_account
 from .models import User
 
+from django.core.mail import send_mail
+
+from celery_tasks.email.tasks import send_verify_email
 
 class CreateUserSerializer(serializers.ModelSerializer):
     """
@@ -215,3 +219,87 @@ class ResetPasswordSerializer(serializers.ModelSerializer):
                 }
             }
         }
+
+
+
+class UserDetailSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model=User
+        fields=('id','username','mobile','email','email_active')
+
+class EmailSerializer(serializers.ModelSerializer):
+
+    def update(self,instance,validated_data):
+        instance.email=validated_data['email']
+        instance.save()
+        #生成附带token的激活链接
+        token=instance.generate_verify_email_token()
+        verify_url= "http://www.meiduo.com:8080/success_verify_email.html?token=" + token
+        #发送验证邮件
+        # subject="美多商城邮箱验证"
+        # to_mail=[instance.email]
+        # html_message='<a href="%s">%s</a>' %(url,url)
+        # 发送验证邮件
+        # subject = "美多商城邮箱验证"
+        # to_email = [instance.email]
+        # html_message = '<p>尊敬的用户您好！</p>' \
+        #                '<p>感谢您使用美多商城。</p>' \
+        #                '<p>您的邮箱为：%s 。请点击此链接激活您的邮箱：</p>' \
+        #                '<p><a href="%s">%s<a></p>' % (to_email, verify_url, verify_url)
+        # send_mail(subject,"",settings.EMAIL_HOST_USER, to_email, html_message=html_message)
+
+        # 调用celery通过异步发送激活邮件
+        #send_mail(subject,"",settings.EMAIL_HOST_USER,to_mail,html_message=html_message)
+        # 手动调用celery_tasks
+        send_verify_email.delay([instance.email],verify_url)
+        return instance
+
+    class Meta:
+        model=User
+        fields=('id','email')
+        extra_kwargs={
+            'email':{
+                'required':True
+            }
+        }
+
+# 用户地址信息
+from .models import Address
+
+class UserAddressSerializer(serializers.ModelSerializer):
+    """
+    用户地址序列化器
+    """
+    province=serializers.StringRelatedField(read_only=True)
+    city=serializers.StringRelatedField(read_only=True)
+    district=serializers.StringRelatedField(read_only=True)
+    province_id=serializers.IntegerField(label='省ID',required=True)
+    city_id=serializers.IntegerField(label='市ID',required=True)
+    district_id=serializers.IntegerField(label='区ID',required=True)
+    mobile=serializers.RegexField(label='手机号',regex=r'^1[3-9]\d{9}$')
+
+    class Meta:
+        model=Address
+        exclude=('user','is_deleted','create_time','update_time')
+
+    def create(self, validated_data):
+        """
+        保存
+        :param validated_data:
+        :return:
+        """
+        #address模型类中有user属性，将user对象添加到模型类的创建参数中
+        validated_data['user']=self.context['request'].user
+        return super().create(validated_data)
+
+class AddressTitleSerializer(serializers.ModelSerializer):
+    """
+    地址标题
+    """
+    class Meta:
+        model=Address
+        fields=('title',)
+
+
+

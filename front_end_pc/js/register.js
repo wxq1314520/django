@@ -1,6 +1,7 @@
 var vm = new Vue({
 	el: '#app',
 	data: {
+		host,
 		error_name: false,
 		error_password: false,
 		error_check_password: false,
@@ -46,7 +47,7 @@ var vm = new Vue({
 		 	//生成图片验证码
 		this.image_code_id=this.generate_uuid()
 		//组装图片验证码url地址
-		this.image_code_url="http://127.0.0.1:8000/image_code/"+this.image_code_id
+		this.image_code_url=this.host+"/image_code/"+this.image_code_id
 
 		},
 		//发送验证码
@@ -67,7 +68,7 @@ var vm = new Vue({
 			}
 
 			// 向后端接口发送请求，让后端发送短信验证码
-			axios.get('http://127.0.0.1:8000/sms_code/' + this.mobile + '/?image_code=' + this.image_code+'&image_code_id='+ this.image_code_id, {
+			axios.get(this.host+'/sms_code/' + this.mobile + '/?image_code=' + this.image_code+'&image_code_id='+ this.image_code_id, {
 					// 向后端声明，请返回json数据
 					responseType: 'json'
 				})
@@ -112,7 +113,7 @@ var vm = new Vue({
 			}
 			//检查用户名唯一性
             if(this.error_name==false){
-			    axios.get('http://127.0.0.1:8000/username/'+this.username+"/count/",{
+			    axios.get(this.host+'/username/'+this.username+"/count/",{
 			        responseType:'json'
                 }).then(response=>{
                     if(response.data.count>0){
@@ -151,7 +152,7 @@ var vm = new Vue({
 			}
 			// 发送请求到后台校验手机
             if(this.error_phone==false){
-			    axios.get('http://127.0.0.1:8000/mobile/'+this.mobile+'/count/',{
+			    axios.get(this.host+'/'+this.mobile+'/count/',{
 			        responseType:'json'
                     })
                     .then(response=>{
@@ -224,7 +225,7 @@ var vm = new Vue({
             // }
             if(this.error_name == false && this.error_password == false && this.error_check_password == false
 				&& this.error_phone == false && this.error_sms_code == false && this.error_allow == false) {
-				axios.post('http://127.0.0.1:8000/users/', {
+				axios.post(this.host+'/users/', {
 						username: this.username,
 						password: this.password,
 						password2: this.password2,
@@ -244,7 +245,7 @@ var vm = new Vue({
 						localStorage.token=response.data.token;
 						localStorage.username=response.data.username;
 						localStorage.user_id=response.data.user_id;
-                        //location.href = '/index.html'; // 也可以使用 location.assign("/index.html");
+                        //location.href = '/user_center_info.html'; // 也可以使用 location.assign("/index.html");
 					})
 					.catch(error=> {
 						if (error.response.status == 400) {
