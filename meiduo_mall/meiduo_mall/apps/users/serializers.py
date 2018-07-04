@@ -303,3 +303,39 @@ class AddressTitleSerializer(serializers.ModelSerializer):
 
 
 
+class ChangepwdSerializer(serializers.ModelSerializer):
+    password2=serializers.CharField(label='确认密码',write_only=True)
+    raw_password=serializers.CharField(label='旧密码',write_only=True)
+
+
+    def validate(self, attrs):
+        raw_password=attrs['raw_password']
+        password2=attrs['password2']
+        password=attrs['password']
+        user=self.context['request'].user
+        if not user.check_password(raw_password):
+            return serializers.ValidationError('旧密码错误')
+        if password!=password2:
+            return serializers.ValidationError('两次密码不一致')
+        return attrs
+    def update(self, instance, validated_data):
+        instance.set_password(validated_data['password'])
+        instance.save()
+        return instance
+
+    class Meta:
+        model=User
+        fields=('raw_password','password','password2')
+        extra_kwargs={
+            'password':{
+                'write_only': True,
+                'min_length': 8,
+                'max_length': 20,
+                'error_messages': {
+                    'min_length': '仅允许8-20个字符的密码',
+                    'max_length': '仅允许8-20个字符的密码',
+            }
+        }
+    }
+
+

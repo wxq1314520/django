@@ -25,7 +25,8 @@ urlpatterns = [
     url(r"users/(?P<pk>\d+)/password/$", views.PasswordView.as_view()),
     url(r"^user/$", views.UserDetailView.as_view()),
     url(r'emails/$',views.EmailView.as_view()),
-    url(r'emails/verification/$',views.VerifyEmailView.as_view())
+    url(r'emails/verification/$',views.VerifyEmailView.as_view()),
+    url(r'changepwd/$',views.UpdatepwdView.as_view()),
 ]
 router=DefaultRouter()
 router.register('addresses',views.AddressViewSet,base_name='addresses')

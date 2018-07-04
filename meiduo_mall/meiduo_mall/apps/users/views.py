@@ -125,16 +125,18 @@ class PasswordView(UpdateAPIView):
         :return: user
         """
         return self.update(request, pk)
+class UpdatepwdView(UpdateAPIView):
 
+    permission_classes = [IsAuthenticated]
+    serializer_class = serializers.ChangepwdSerializer
+    def get_object(self):
+        return self.request.user
 
 
 class UserDetailView(RetrieveAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class =serializers.UserDetailSerializer
     def get_object(self):
-
-
-
         return self.request.user
 
 
